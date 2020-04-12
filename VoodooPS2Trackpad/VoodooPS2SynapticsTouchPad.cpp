@@ -21,7 +21,7 @@
  */
 
 
-//#define SIMULATE_CLICKPAD
+#define SIMULATE_CLICKPAD
 //#define SIMULATE_PASSTHRU
 
 //#define FULL_HW_RESET
@@ -302,6 +302,7 @@ void ApplePS2SynapticsTouchPad::queryCapabilities()
     int nExtendedQueries = (buf3[0] & 0x70) >> 4;
     INFO_LOG("VoodooPS2Trackpad: nExtendedQueries=%d\n", nExtendedQueries);
     UInt8 supportsEW = buf3[2] & (1<<5);
+    supportsEW = true;//强制支持ew
     INFO_LOG("VoodooPS2Trackpad: supports EW=%d\n", supportsEW != 0);
     
     // deal with pass through capability
