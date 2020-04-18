@@ -272,12 +272,12 @@ private:
     int clampedFingerCount {0};
     int agmFingerCount {0};
 	bool wasSkipped {false};
-	int z_finger {45};
+	int z_finger {20};
 	bool outzone_wt {false}, palm {false}, palm_wt {false};
     int zlimit {0};
 	int noled {0};
     uint64_t maxaftertyping {500000000};
-    int wakedelay {1000};
+    int wakedelay {500};
     int skippassthru {0};
     int forcepassthru {0};
     int hwresetonstart {0};
@@ -287,10 +287,10 @@ private:
     uint64_t clickpadclicktime {300000000}; // 300ms default
     int clickpadtrackboth {true};
     int ignoredeltasstart {0};
-    int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
+    int minXOverride {1300}, minYOverride {1100}, maxXOverride {5656}, maxYOverride {4700};
 
     //vars for clickpad and middleButton support (thanks jakibaki)
-    int isthinkpad {0};
+    int isthinkpad {1};
     int thinkpadButtonState {0};
     int thinkpadNubScrollXMultiplier {1};
     int thinkpadNubScrollYMultiplier {1};
