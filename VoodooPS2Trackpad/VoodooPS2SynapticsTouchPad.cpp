@@ -21,7 +21,7 @@
  */
 
 
-#define SIMULATE_CLICKPAD
+//#define SIMULATE_CLICKPAD
 //#define SIMULATE_PASSTHRU
 
 //#define FULL_HW_RESET
@@ -302,7 +302,6 @@ void ApplePS2SynapticsTouchPad::queryCapabilities()
     int nExtendedQueries = (buf3[0] & 0x70) >> 4;
     INFO_LOG("VoodooPS2Trackpad: nExtendedQueries=%d\n", nExtendedQueries);
     UInt8 supportsEW = buf3[2] & (1<<5);
-    supportsEW = true;//强制支持ew
     INFO_LOG("VoodooPS2Trackpad: supports EW=%d\n", supportsEW != 0);
     
     // deal with pass through capability
@@ -397,11 +396,11 @@ void ApplePS2SynapticsTouchPad::queryCapabilities()
         _reportsv = (bool)(buf3[1] >> 3) & (1 << 3);
         INFO_LOG("VoodooPS2Trackpad: _reportsv=%d\n", _reportsv);
 
-        // automatically set extendedwmode for clickpads, if supported
-        if (supportsEW && clickpadtype)
+        // automatically set extendedwmode if supported
+        if (supportsEW)
         {
             _extendedwmodeSupported = true;
-            INFO_LOG("VoodooPS2Trackpad: Clickpad supports extendedW mode\n");
+            INFO_LOG("VoodooPS2Trackpad: Trackpad supports extendedW mode\n");
         }
 
         reportsMax = (bool)(buf3[0] & (1 << 1));
@@ -1487,8 +1486,10 @@ void ApplePS2SynapticsTouchPad::sendTouchData() {
     clock_get_uptime(&timestamp);
     uint64_t timestamp_ns;
     absolutetime_to_nanoseconds(timestamp, &timestamp_ns);
-    
-    if (timestamp_ns - keytime < maxaftertyping)
+
+    // Lenovo Yoga tablet mode works by sending this key every second to disable the touchpad.
+    // That key is mapped to ADB dead key (0x80).
+    if (timestamp_ns - keytime < (keycode == specialKey ? maxafterspecialtyping : maxaftertyping))
         return;
 
     if (lastFingerCount != clampedFingerCount) {
@@ -1854,11 +1855,8 @@ void ApplePS2SynapticsTouchPad::initTouchPad()
 
 bool ApplePS2SynapticsTouchPad::setTouchpadModeByte()
 {
-    if (!_dynamicEW)
-    {
-        _touchPadModeByte = _extendedwmodeSupported ? _touchPadModeByte | (1<<2) : _touchPadModeByte & ~(1<<2);
-        _extendedwmode = _extendedwmodeSupported;
-    }
+    _touchPadModeByte = _extendedwmodeSupported ? _touchPadModeByte | (1<<2) : _touchPadModeByte & ~(1<<2);
+    _extendedwmode = _extendedwmodeSupported;
     return setTouchPadModeByte(_touchPadModeByte);
 }
 
@@ -2004,7 +2002,7 @@ void ApplePS2SynapticsTouchPad::setClickButtons(UInt32 clickButtons)
 
 bool ApplePS2SynapticsTouchPad::setModeByte()
 {
-    if (!_dynamicEW || !_extendedwmodeSupported)
+    if (!_extendedwmodeSupported)
         return false;
 
     _touchPadModeByte = _clickbuttons ? _touchPadModeByte | (1<<2) : _touchPadModeByte & ~(1<<2);
@@ -2073,9 +2071,7 @@ void ApplePS2SynapticsTouchPad::setParamPropertiesGated(OSDictionary * config)
         {"WakeDelay",                       &wakedelay},
         {"Resolution",                      &_resolution},
         {"ScrollResolution",                &_scrollresolution},
-        {"HIDScrollZoomModifierMask",       &scrollzoommask},
         {"ButtonCount",                     &_buttonCount},
-        {"FingerChangeIgnoreDeltas",        &ignoredeltasstart},
         {"MinLogicalXOverride",             &minXOverride},
         {"MinLogicalYOverride",             &minYOverride},
         {"MaxLogicalXOverride",             &maxXOverride},
@@ -2086,6 +2082,7 @@ void ApplePS2SynapticsTouchPad::setParamPropertiesGated(OSDictionary * config)
         {"MouseMultiplierY",                &mousemultipliery},
         {"ForceTouchMode",                  (int*)&_forceTouchMode}, // 0 - disable, 1 - left button, 2 - pressure threshold, 3 - pass pressure value
         {"ForceTouchPressureThreshold",     &_forceTouchPressureThreshold}, // used in mode 2
+        {"SpecialKeyForQuietTime",          &specialKey},
 	};
 	const struct {const char *name; int *var;} boolvars[]={
         {"DisableLEDUpdate",                &noled},
@@ -2093,21 +2090,16 @@ void ApplePS2SynapticsTouchPad::setParamPropertiesGated(OSDictionary * config)
         {"ForcePassThrough",                &forcepassthru},
         {"Thinkpad",                        &isthinkpad},
         {"HWResetOnStart",                  &hwresetonstart},
-        {"ClickPadTrackBoth",               &clickpadtrackboth},
         {"FakeMiddleButton",                &_fakemiddlebutton},
-        {"DynamicEWMode",                   &_dynamicEW},
         {"ProcessUSBMouseStopsTrackpad",    &_processusbmouse},
         {"ProcessBluetoothMouseStopsTrackpad", &_processbluetoothmouse},
  	};
     const struct {const char* name; bool* var;} lowbitvars[]={
-        {"OutsidezoneNoAction When Typing", &outzone_wt},
-        {"PalmNoAction Permanent",          &palm},
-        {"PalmNoAction When Typing",        &palm_wt},
         {"USBMouseStopsTrackpad",           &usb_mouse_stops_trackpad},
     };
     const struct {const char* name; uint64_t* var; } int64vars[]={
         {"QuietTimeAfterTyping",            &maxaftertyping},
-        {"ClickPadClickTime",               &clickpadclicktime},
+        {"QuietTimeAfterSpecialKey",        &maxafterspecialtyping},
         {"MiddleClickTime",                 &_maxmiddleclicktime},
     };
     
@@ -2164,9 +2156,8 @@ void ApplePS2SynapticsTouchPad::setParamPropertiesGated(OSDictionary * config)
 
     // this driver assumes wmode is available (6-byte packets)
     _touchPadModeByte |= 1<<0;
-    // extendedwmode is optional, used automatically for ClickPads
-    if (!_dynamicEW)
-        _touchPadModeByte = _extendedwmodeSupported ? _touchPadModeByte | (1<<2) : _touchPadModeByte & ~(1<<2);
+    // extendedwmode is optional, used automatically
+    _touchPadModeByte = _extendedwmodeSupported ? _touchPadModeByte | (1<<2) : _touchPadModeByte & ~(1<<2);
 	// if changed, setup touchpad mode
 	if (_touchPadModeByte != oldmode)
     {
@@ -2354,6 +2345,7 @@ IOReturn ApplePS2SynapticsTouchPad::message(UInt32 type, IOService* provider, vo
                 default:
                     keytime = pInfo->time;
             }
+            keycode = pInfo->adbKeyCode;
             break;
         }
     }

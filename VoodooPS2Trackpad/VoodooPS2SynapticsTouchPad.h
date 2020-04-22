@@ -277,17 +277,16 @@ private:
     int zlimit {0};
 	int noled {0};
     uint64_t maxaftertyping {500000000};
-    int wakedelay {500};
+    uint64_t maxafterspecialtyping {0};
+    int specialKey {0x80};
+    int wakedelay {1000};
     int skippassthru {0};
-    int forcepassthru {0};
-    int hwresetonstart {0};
+      int forcepassthru {0};
+      int hwresetonstart {0};
     int diszl {0}, diszr {0}, diszt {0}, diszb {0};
     int _resolution {2300}, _scrollresolution {2300};
     int _buttonCount {2};
-    uint64_t clickpadclicktime {300000000}; // 300ms default
-    int clickpadtrackboth {true};
-    int ignoredeltasstart {0};
-    int minXOverride {1300}, minYOverride {1100}, maxXOverride {5656}, maxYOverride {4700};
+    int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
 
     //vars for clickpad and middleButton support (thanks jakibaki)
     int isthinkpad {1};
@@ -300,17 +299,15 @@ private:
     int mousemultipliery {1};
 
     
-    int rczl {0}, rczr {0}, rczb {0}, rczt {0}; // rightclick zone for 1-button ClickPads
-    
     // state related to secondary packets/extendedwmode
     bool tracksecondary {false};
     bool _extendedwmode {false}, _extendedwmodeSupported {false};
-    int _dynamicEW {0};
 
     // normal state
 	UInt32 passbuttons {0};
     UInt32 lastbuttons {0};
     uint64_t keytime {0};
+    UInt16 keycode {0};
     bool ignoreall {false};
 #ifdef SIMULATE_PASSTHRU
 	UInt32 trackbuttons {0};
@@ -334,7 +331,6 @@ private:
     IONotifier* bluetooth_hid_terminate_notify {nullptr}; // Notification when a bluetooth HID device is disconnected
     
 	int _modifierdown {0}; // state of left+right control keys
-    int scrollzoommask {0};
     
     // for scaling x/y values
     int xupmm {50}, yupmm {50}; // 50 is just arbitrary, but same
@@ -364,11 +360,6 @@ private:
     // Don't know what is the exact value of x and y on edge of touchpad
     // the best would be { return x > xmax/2 && y < ymax/4; }
 
-    inline bool isInRightClickZone(int x, int y)
-        { return x > rczl && x < rczr && y > rczb && y < rczt; }
-    inline bool isInLeftClickZone(int x, int y)
-        { return x <= rczl && x <= rczr && y > rczb && y < rczt; }
-        
     virtual void   setTouchPadEnable( bool enable );
     virtual bool   getTouchPadData( UInt8 dataSelector, UInt8 buf3[] );
     virtual bool   getTouchPadStatus(  UInt8 buf3[] );
