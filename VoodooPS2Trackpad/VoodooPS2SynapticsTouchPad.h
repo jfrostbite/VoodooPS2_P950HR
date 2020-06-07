@@ -181,13 +181,15 @@ struct virtual_finger_state {
     uint8_t width;
     bool touch;
     bool button;
+	MT2FingerType fingerType;
 };
 
 typedef enum {
     FORCE_TOUCH_DISABLED = 0,
     FORCE_TOUCH_BUTTON = 1,
     FORCE_TOUCH_THRESHOLD = 2,
-    FORCE_TOUCH_VALUE = 3
+    FORCE_TOUCH_VALUE = 3,
+    FORCE_TOUCH_CUSTOM = 4
 } ForceTouchMode;
 
 #define SYNAPTICS_MAX_FINGERS 4
@@ -249,8 +251,12 @@ private:
 
 	synaptics_hw_state fingerStates[SYNAPTICS_MAX_FINGERS] {};
     virtual_finger_state virtualFingerStates[SYNAPTICS_MAX_FINGERS] {};
+	bool freeFingerTypes[kMT2FingerTypeCount];
+
+	static_assert(SYNAPTICS_MAX_FINGERS <= kMT2FingerTypeLittleFinger, "Too many fingers for one hand");
 
     void assignVirtualFinger(int physicalFinger);
+	void assignFingerType(virtual_finger_state &vf);
     int lastFingerCount;
     int lastSentFingerCount;
     bool hadLiftFinger;
@@ -268,6 +274,10 @@ private:
 
 	ForceTouchMode _forceTouchMode {FORCE_TOUCH_BUTTON};
 	int _forceTouchPressureThreshold {100};
+
+    int _forceTouchCustomDownThreshold {90};
+    int _forceTouchCustomUpThreshold {20};
+    int _forceTouchCustomPower {8};
     
     int clampedFingerCount {0};
     int agmFingerCount {0};

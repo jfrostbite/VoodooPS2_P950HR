@@ -1,8 +1,19 @@
 VoodooPS2 Changelog
 ============================
+#### v2.1.6
+- Upgraded to VoodooInput 1.0.7
+- Fixed swiping desktops when holding a dragged item by improving thumb detection
+
+#### v2.1.5
+- Upgraded to VoodooInput 1.0.6
+- Added logo + print scr hotkey to disable trackpad
+
 #### v2.1.4
 - Upgraded to VoodooInput 1.0.5
 - Improved Smart Zoom and four finger gestures
+- Enabled Extended W mode on all trackpads that support it
+- Added ability for one special key to block trackpad longer than other keys
+- Added a new Force Touch emulation mode
 
 #### v2.1.3
 - Added `ps2rst=0` boot-arg for select CFL laptop compatibility

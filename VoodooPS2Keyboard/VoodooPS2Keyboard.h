@@ -118,6 +118,9 @@ private:
     // special hack for Envy brightness access, while retaining F2/F3 functionality
     bool                        _brightnessHack;
     
+    // Toggle keyboard input along with touchpad when Windows+printscreen is pressed
+    bool                        _disableInput;
+    
     // macro processing
     OSData**                    _macroTranslation;
     OSData**                    _macroInversion;
