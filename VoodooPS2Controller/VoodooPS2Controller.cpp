@@ -23,15 +23,12 @@
 #define DISABLE_CLOCKS_IRQS_BEFORE_SLEEP 1
 #define FULL_INIT_AFTER_WAKE 1
 
-#include "LegacyIOService.h"
+#include <IOKit/IOService.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOTimerEventSource.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
-#pragma clang diagnostic pop
 
 #include "ApplePS2KeyboardDevice.h"
 #include "ApplePS2MouseDevice.h"
@@ -1256,7 +1253,7 @@ UInt8 ApplePS2Controller::readDataPort(PS2DeviceType deviceType)
   //
 
   UInt8  readByte;
-  UInt8  status;
+  UInt8  status = 0;
   UInt32 timeoutCounter = 20000;    // (timeoutCounter * kDataDelay = 140 ms)
 
   while (1)
@@ -1378,7 +1375,7 @@ UInt8 ApplePS2Controller::readDataPort(PS2DeviceType deviceType,
   bool   firstByteHeld = false;
   UInt8  readByte;
   bool   requestedStream;
-  UInt8  status;
+  UInt8  status = 0;
   UInt32 timeoutCounter = 10000;    // (timeoutCounter * kDataDelay = 70 ms)
 
   while (1)
@@ -2015,7 +2012,7 @@ void ApplePS2Controller::dispatchMessageGated(int* message, void* data)
         
         switch (pInfo->adbKeyCode)
         {
-                // Do not trigger on modifier key presses (for example multi-click select)
+            // Do not trigger on modifier key presses (for example multi-click select)
             case 0x38:  // left shift
             case 0x3c:  // right shift
             case 0x3b:  // left control

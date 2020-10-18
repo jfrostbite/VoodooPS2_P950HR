@@ -1,5 +1,15 @@
 VoodooPS2 Changelog
 ============================
+
+#### v2.1.8
+- Added support for receiving input form other kexts
+- Fixed dynamic coordinate refresh for ELAN v3 touchpads
+
+#### v2.1.7
+- Initial MacKernelSDK and Xcode 12 compatibility
+- Added support for select ELAN touchpads by BAndysc and hieplpvip
+- Added constants for 11.0 support
+
 #### v2.1.6
 - Upgraded to VoodooInput 1.0.7
 - Fixed swiping desktops when holding a dragged item by improving thumb detection

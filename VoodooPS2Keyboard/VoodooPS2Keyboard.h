@@ -25,12 +25,9 @@
 
 #include <libkern/c++/OSBoolean.h>
 #include "../VoodooPS2Controller/ApplePS2KeyboardDevice.h"
-#include "LegacyIOHIKeyboard.h"
+#include <IOKit/hidsystem/IOHIKeyboard.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
-#pragma clang diagnostic pop
 
 #include <IOKit/IOCommandGate.h>
 
@@ -106,12 +103,8 @@ private:
     IOTimerEventSource*         _sleepEjectTimer;
     UInt32                      _maxsleeppresstime;
 
-    // ACPI support for screen brightness
-    IOACPIPlatformDevice *      _provider;
-    int *                       _brightnessLevels;
-    int                         _brightnessCount;
-
     // ACPI support for keyboard backlight
+    IOACPIPlatformDevice *      _provider;
     int *                       _backlightLevels;
     int                         _backlightCount;
     
