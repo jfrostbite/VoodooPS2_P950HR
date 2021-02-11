@@ -287,7 +287,7 @@ private:
 //    int minXOverride {1300}, minYOverride {1100}, maxXOverride {5656}, maxYOverride {4700};
     int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
     //vars for clickpad and middleButton support (thanks jakibaki)
-    int isthinkpad {0};
+    int isthinkpad {1};
     int thinkpadButtonState {0};
     int thinkpadNubScrollXMultiplier {1};
     int thinkpadNubScrollYMultiplier {1};
