@@ -1,5 +1,14 @@
 VoodooPS2 Changelog
 ============================
+#### 2.2.1
+- Fix issue with registering of services matched by property name "RM,deliverNotifications". It solves issue with broadcasting timestamp for the last pressed key and handling of QuietTimeAfterTyping [see bug #1415](https://github.com/acidanthera/bugtracker/issues/1415) 
+
+#### 2.2.0
+- Added VoodooRmi compatibility to allow external touchpad resets
+
+#### v2.1.9
+- Disabled PrntScr remap by default, see `SSDT-PrtSc-Remap.dsl` for example to re-enable it
+- Disabled Command and Option remap by default, see `SSDT-Swap-CommandOption.dsl` for example to re-enable it
 
 #### v2.1.8
 - Added support for receiving input form other kexts
