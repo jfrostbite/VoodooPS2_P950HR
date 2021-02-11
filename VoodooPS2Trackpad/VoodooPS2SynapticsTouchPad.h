@@ -271,7 +271,7 @@ private:
     int clampedFingerCount {0};
     int agmFingerCount {0};
 	bool wasSkipped {false};
-	int z_finger {20};
+	int z_finger {30};
     int zlimit {0};
 	int noled {0};
     uint64_t maxaftertyping {500000000};
@@ -284,10 +284,10 @@ private:
     int diszl {0}, diszr {0}, diszt {0}, diszb {0};
     int _resolution {2300}, _scrollresolution {2300};
     int _buttonCount {2};
-    int minXOverride {1300}, minYOverride {1100}, maxXOverride {5656}, maxYOverride {4700};
-
+//    int minXOverride {1300}, minYOverride {1100}, maxXOverride {5656}, maxYOverride {4700};
+    int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
     //vars for clickpad and middleButton support (thanks jakibaki)
-    int isthinkpad {1};
+    int isthinkpad {0};
     int thinkpadButtonState {0};
     int thinkpadNubScrollXMultiplier {1};
     int thinkpadNubScrollYMultiplier {1};
