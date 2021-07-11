@@ -545,6 +545,8 @@ bool ApplePS2SynapticsTouchPad::start( IOService * provider )
 		_device = nullptr;
         return false;
     }
+
+    pWorkLoop->addEventSource(_cmdGate);
 	
     //
     // Lock the controller during initialization
@@ -578,8 +580,6 @@ bool ApplePS2SynapticsTouchPad::start( IOService * provider )
         }
         pWorkLoop->addEventSource(_buttonTimer);
     }
-    
-    pWorkLoop->addEventSource(_cmdGate);
     
     //
     // Query the touchpad for the capabilities we need to know.
@@ -2216,6 +2216,7 @@ void ApplePS2SynapticsTouchPad::setParamPropertiesGated(OSDictionary * config)
  	};
     const struct {const char* name; bool* var;} lowbitvars[]={
         {"USBMouseStopsTrackpad",           &usb_mouse_stops_trackpad},
+        {"DisableDeepSleep",                &disableDeepSleep}
     };
     const struct {const char* name; uint64_t* var; } int64vars[]={
         {"QuietTimeAfterTyping",            &maxaftertyping},
@@ -2346,8 +2347,11 @@ void ApplePS2SynapticsTouchPad::setDevicePowerState( UInt32 whatToDo )
             //
 
             setTouchPadEnable( false ); // Disable stream mode
-            _touchPadModeByte |= 1 << 3;
-            setModeByte(_touchPadModeByte); // Enable sleep
+
+            if (!disableDeepSleep) {
+                _touchPadModeByte |= 1 << 3;
+                setModeByte(_touchPadModeByte); // Enable sleep
+            }
             break;
 
         case kPS2C_EnableDevice:
@@ -2356,9 +2360,11 @@ void ApplePS2SynapticsTouchPad::setDevicePowerState( UInt32 whatToDo )
             // completed its power-on self-test and calibration.
             //
 
-            IOSleep(wakedelay);
-            _touchPadModeByte &= ~(1 << 3); // Wake from sleep
-            setModeByte(_touchPadModeByte);
+            if (!disableDeepSleep) {
+                IOSleep(wakedelay);
+                _touchPadModeByte &= ~(1 << 3); // Wake from sleep
+                setModeByte(_touchPadModeByte);
+            }
             IOSleep(wakedelay);
             
             // Reset and enable the touchpad.
