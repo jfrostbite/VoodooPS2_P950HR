@@ -161,7 +161,7 @@ void ApplePS2Controller::onWatchdogTimer()
 void ApplePS2Controller::handleInterrupt(bool watchdog)
 {
     // Loop only while there is data currently on the input stream.
-    bool wakePort[kPS2MaxIdx] {};
+    bool wakePort[kPS2MuxMaxIdx] {};
 
     while (1)
     {
@@ -202,11 +202,6 @@ void ApplePS2Controller::handleInterrupt(bool watchdog)
 #endif
       
         port = getPortFromStatus(status);
-        if (port >= kPS2MaxIdx || _devices[port] == nullptr)
-        {
-            continue;
-        }
-        
         if (kPS2IR_packetReady == _dispatchDriverInterrupt(port, data))
         {
             wakePort[port] = true;
@@ -214,9 +209,8 @@ void ApplePS2Controller::handleInterrupt(bool watchdog)
     } // while (forever)
     
     // wake up workloop based mouse interrupt source if needed
-    size_t max_idx = _muxPresent ? kPS2MaxIdx : kPS2MuxIdx;
-    for (size_t i = kPS2KbdIdx; i < max_idx; i++) {
-        if (wakePort[i] && _devices[i] != nullptr)
+    for (size_t i = kPS2KbdIdx; i < _nubsCount; i++) {
+        if (wakePort[i])
         {
             _devices[i]->packetActionInterrupt();
         }
@@ -375,7 +369,7 @@ IOReturn ApplePS2Controller::setProperties(OSObject* props)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ApplePS2Controller::resetController(void)
+void ApplePS2Controller::resetController(bool wakeup)
 {
     _suppressTimeout = true;
     UInt8 commandByte;
@@ -383,14 +377,9 @@ void ApplePS2Controller::resetController(void)
     // Disable keyboard and mouse
     writeCommandPort(kCP_DisableKeyboardClock);
     writeCommandPort(kCP_DisableMouseClock);
-    // Flush any data
-    while ( inb(kCommandPort) & kOutputReady )
-    {
-        IODelay(kDataDelay);
-        inb(kDataPort);
-        IODelay(kDataDelay);
-    }
-    writeCommandPort(kCP_EnableMouseClock);
+    flushDataPort();
+    if (!_kbdOnly)
+        writeCommandPort(kCP_EnableMouseClock);
     writeCommandPort(kCP_EnableKeyboardClock);
     // Read current command
     writeCommandPort(kCP_GetCommandByte);
@@ -399,13 +388,16 @@ void ApplePS2Controller::resetController(void)
     // Issue Test Controller to try to reset device
     writeCommandPort(kCP_TestController);
     readDataPort(kPS2KbdIdx);
-    readDataPort(kPS2AuxIdx);
+    if (!_kbdOnly)
+        readDataPort(kPS2AuxIdx);
     // Issue Test Keyboard Port to try to reset device
     writeCommandPort(kCP_TestKeyboardPort);
     readDataPort(kPS2KbdIdx);
     // Issue Test Mouse Port to try to reset device
-    writeCommandPort(kCP_TestMousePort);
-    readDataPort(kPS2AuxIdx);
+    if (!_kbdOnly) {
+        writeCommandPort(kCP_TestMousePort);
+        readDataPort(kPS2AuxIdx);
+    }
     _suppressTimeout = false;
     
     //
@@ -415,37 +407,72 @@ void ApplePS2Controller::resetController(void)
     // asynchronous data arrival for key/mouse events).  We call the read/write
     // port routines directly, since no other thread will conflict with us.
     //
-    commandByte &= ~(kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ | kCB_DisableMouseClock | kCB_DisableMouseClock);
+    if (!_kbdOnly)
+        commandByte &= ~(kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ | kCB_DisableMouseClock | kCB_DisableKeyboardClock);
+    else
+        commandByte &= ~(kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ | kCB_DisableKeyboardClock);
     commandByte |= kCB_TranslateMode;
     writeCommandPort(kCP_SetCommandByte);
     writeDataPort(commandByte);
     DEBUG_LOG("%s: new commandByte = %02x\n", getName(), commandByte);
-    
-    writeDataPort(kDP_SetDefaultsAndDisable);
-    readDataPort(kPS2KbdIdx);       // (discard acknowledge; success irrelevant)
-
-    if (setMuxMode(true))
+  
+    if (wakeup && _muxPresent)
     {
-        _muxPresent = true;
-        for (size_t i = 0; i < PS2_MUX_PORTS; i++)
-        {
-            writeCommandPort(kCP_TransmitToMuxedMouse + i);
-            writeDataPort(kDP_SetDefaultsAndDisable);
-            readDataPort(kPS2MuxIdx + i);        // (discard acknowledge; success irrelevant)
+        setMuxMode(true);
+    }
+    else if (!wakeup)
+    {
+        if (!_kbdOnly){
+            _muxPresent = setMuxMode(true);
+            _nubsCount = _muxPresent ? kPS2MuxMaxIdx : kPS2AuxMaxIdx;
+        }else{
+            _muxPresent = false;
+            _nubsCount = 1;
         }
     }
-    else
-    {
-        writeCommandPort(kCP_TransmitToMouse);
-        writeDataPort(kDP_SetDefaultsAndDisable);
-        readDataPort(kPS2AuxIdx);          // (discard acknowledge; success irrelevant)
-    }
-    
+  
+    resetDevices();
+  
     //
     // Clear out garbage in the controller's input streams, before starting up
     // the work loop.
     //
+  
+    flushDataPort();
+}
+
+// -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void ApplePS2Controller::resetDevices()
+{
+    // Reset keyboard
+    writeDataPort(kDP_SetDefaultsAndDisable);
+    readDataPort(kPS2KbdIdx);       // (discard acknowledge; success irrelevant)
+  
+    if (!_muxPresent)
+    {
+        // Reset aux device
+        if(!_kbdOnly){
+            writeCommandPort(kCP_TransmitToMouse);
+            writeDataPort(kDP_SetDefaultsAndDisable);
+            readDataPort(kPS2AuxIdx);          // (discard acknowledge; success irrelevant)
+        }
+        return;
+    }
     
+    // Reset all muxed devices
+    for (size_t i = 0; i < PS2_MUX_PORTS; i++)
+    {
+        writeCommandPort(kCP_TransmitToMuxedMouse + i);
+        writeDataPort(kDP_SetDefaultsAndDisable);
+        readDataPort(kPS2AuxIdx + i);        // (discard acknowledge; success irrelevant)
+    }
+}
+
+// -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void ApplePS2Controller::flushDataPort()
+{
     while ( inb(kCommandPort) & kOutputReady )
     {
         IODelay(kDataDelay);
@@ -459,36 +486,28 @@ void ApplePS2Controller::resetController(void)
 bool ApplePS2Controller::setMuxMode(bool enable)
 {
     UInt8 param = kDP_MuxCmd;
-    // getPortFromStatus will return kPS2MuxIdx when _muxPresent is true
-    size_t readPort = _muxPresent ? kPS2MuxIdx : kPS2AuxIdx;
 
     writeCommandPort(kCP_WriteMouseOutputBuffer);
     writeDataPort(param);
-    if (readDataPort(readPort) != param)
+    if (readDataPort(kPS2AuxIdx) != param)
         return false;
 
     param = enable ? kDP_EnableMuxCmd1 : kDP_DisableMuxCmd1;
     writeCommandPort(kCP_WriteMouseOutputBuffer);
     writeDataPort(param);
-    if (readDataPort(readPort) != param)
+    if (readDataPort(kPS2AuxIdx) != param)
         return false;
 
     param = enable ? kDP_GetMuxVersion : kDP_DisableMuxCmd2;
     writeCommandPort(kCP_WriteMouseOutputBuffer);
     writeDataPort(param);
-    UInt8 ver = readDataPort(readPort);
+    UInt8 ver = readDataPort(kPS2AuxIdx);
     
     // We want the version on enable, and original command on disable
     if ((enable && ver == param) ||
         (!enable && ver != param))
         return false;
-
-    // Only log first time
-    if (!_muxPresent)
-    {
-      IOLog("ApplePS2Controller::setMuxMode = true - version: %x\n", ver);
-    }
-
+  
     return true;
 }
 
@@ -520,14 +539,16 @@ bool ApplePS2Controller::start(IOService * provider)
     queue_enter(&_keyboardQueueUnused, &_keyboardQueueAlloc[index],
                 KeyboardQueueElement *, chain);
 #endif //DEBUGGER_SUPPORT
-    
+
+  PE_parse_boot_argn("ps2kbdonly", &_kbdOnly, sizeof(_kbdOnly));
+
   //
   // Reset and clean the 8042 keyboard/mouse controller.
   //
     
   PE_parse_boot_argn("ps2rst", &_resetControllerFlag, sizeof(_resetControllerFlag));
   if (_resetControllerFlag & RESET_CONTROLLER_ON_BOOT) {
-    resetController();
+    resetController(false);
   }
 
   //
@@ -627,62 +648,44 @@ bool ApplePS2Controller::start(IOService * provider)
     OSSafeReleaseNULL(_devices[kPS2KbdIdx]);
     goto fail;
   }
-   
-
-  if (_muxPresent)
+  
+  for (size_t i = kPS2AuxIdx; i < _nubsCount; i++)
   {
-    for (size_t i = kPS2MuxIdx; i < kPS2MaxIdx; i++)
+    _devices[i] = OSTypeAlloc(ApplePS2MouseDevice);
+    if ( !_devices[i]                     ||
+         !_devices[i]->init(i)            ||
+         !_devices[i]->attach(this) )
     {
-      _devices[i] = OSTypeAlloc(ApplePS2MouseDevice);
-      if ( !_devices[i]                     ||
-           !_devices[i]->init(i)            ||
-           !_devices[i]->attach(this) )
-      {
-        OSSafeReleaseNULL(_devices[i]);
-        goto fail;
-      }
-    }
-  }
-  else
-  {
-    _devices[kPS2AuxIdx] = OSTypeAlloc(ApplePS2MouseDevice);
-    if ( !_devices[kPS2AuxIdx]                    ||
-         !_devices[kPS2AuxIdx]->init(kPS2AuxIdx)  ||
-         !_devices[kPS2AuxIdx]->attach(this) )
-    {
-      OSSafeReleaseNULL(_devices[kPS2AuxIdx]);
+      OSSafeReleaseNULL(_devices[i]);
       goto fail;
     }
   }
   
-  for (size_t i = kPS2KbdIdx; i < kPS2MaxIdx; i++)
+  for (size_t i = kPS2KbdIdx; i < _nubsCount; i++)
   {
-    if (_devices[i])
-    {
-      _devices[i]->registerService();
-    }
+    _devices[i]->registerService();
   }
   
   registerService();
 
   propertyMatch = propertyMatching(_deliverNotification, kOSBooleanTrue);
   if (propertyMatch != NULL) {
-    IOServiceMatchingNotificationHandler notificationHandlerPublish = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &ApplePS2Controller::notificationHandlerPublish);
+    IOServiceMatchingNotificationHandler publishHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &ApplePS2Controller::notificationHandlerPublish);
 
     //
     // Register notifications for availability of any IOService objects wanting to consume our message events
     //
     _publishNotify = addMatchingNotification(gIOFirstPublishNotification,
 										   propertyMatch,
-                                           notificationHandlerPublish,
+                                           publishHandler,
 										   this,
 										   0, 10000);
 
-    IOServiceMatchingNotificationHandler notificationHandlerTerminate = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &ApplePS2Controller::notificationHandlerTerminate);
+    IOServiceMatchingNotificationHandler terminateHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &ApplePS2Controller::notificationHandlerTerminate);
 
     _terminateNotify = addMatchingNotification(gIOTerminatedNotification,
 											 propertyMatch,
-                                             notificationHandlerTerminate,
+                                             terminateHandler,
 											 this,
 											 0, 10000);
 
@@ -722,7 +725,7 @@ void ApplePS2Controller::stop(IOService * provider)
   OSSafeReleaseNULL(_notificationServices);
     
   // Free the nubs we created.
-  for (size_t i = 0; i < kPS2MaxIdx; i++) {
+  for (size_t i = 0; i < kPS2MuxMaxIdx; i++) {
     OSSafeReleaseNULL(_devices[i]);
   }
 
@@ -957,7 +960,7 @@ void ApplePS2Controller::setCommandByteGated(PS2Request* request)
 
 bool ApplePS2Controller::submitRequest(PS2Request * request)
 {
-  assert(request->port < kPS2MaxIdx);
+  assert(request->port < kPS2MuxMaxIdx);
 
   //
   // Submit the request to the controller for processing, asynchronously.
@@ -975,7 +978,7 @@ bool ApplePS2Controller::submitRequest(PS2Request * request)
 
 void ApplePS2Controller::submitRequestAndBlock(PS2Request * request)
 {
-    assert(request->port < kPS2MaxIdx);
+    assert(request->port < kPS2MuxMaxIdx);
   
     _cmdGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &ApplePS2Controller::submitRequestAndBlockGated), request);
 }
@@ -1130,10 +1133,12 @@ void ApplePS2Controller::processRequest(PS2Request * request)
         break;
 
       case kPS2C_WriteDataPort:
-        if (devicePort == kPS2AuxIdx) {
-          writeCommandPort(kCP_TransmitToMouse);
-        } else if (devicePort > kPS2AuxIdx) {
-          writeCommandPort(kCP_TransmitToMuxedMouse + (devicePort - kPS2MuxIdx));
+        if (devicePort >= kPS2AuxIdx) {
+          if (_muxPresent) {
+            writeCommandPort(kCP_TransmitToMuxedMouse + (devicePort - kPS2AuxIdx));
+          } else {
+            writeCommandPort(kCP_TransmitToMouse);
+          }
         }
         
         writeDataPort(request->commands[index].inOrOut);
@@ -1148,10 +1153,12 @@ void ApplePS2Controller::processRequest(PS2Request * request)
       //
 
       case kPS2C_SendCommandAndCompareAck:
-        if (devicePort == kPS2AuxIdx) {
-          writeCommandPort(kCP_TransmitToMouse);
-        } else if (devicePort > kPS2AuxIdx) {
-          writeCommandPort(kCP_TransmitToMuxedMouse + (devicePort - kPS2MuxIdx));
+        if (devicePort >= kPS2AuxIdx) {
+          if (_muxPresent) {
+            writeCommandPort(kCP_TransmitToMuxedMouse + (devicePort - kPS2AuxIdx));
+          } else {
+            writeCommandPort(kCP_TransmitToMouse);
+          }
         }
         
         writeDataPort(request->commands[index].inOrOut);
@@ -1249,14 +1256,13 @@ void ApplePS2Controller::processRequestQueue(IOInterruptEventSource *, int)
 size_t ApplePS2Controller::getPortFromStatus(UInt8 status)
 {
     bool auxPort = status & kMouseData;
-    if (_muxPresent && auxPort)
-    {
-        return kPS2MuxIdx + ((status >> 6) & 3);
+    size_t port = auxPort ? kPS2AuxIdx : kPS2KbdIdx;
+  
+    if (_muxPresent && auxPort) {
+        port += (status >> PS2_STA_MUX_SHIFT) & PS2_STA_MUX_MASK;
     }
-    else
-    {
-        return auxPort ? kPS2AuxIdx : kPS2KbdIdx;
-    }
+  
+    return port;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1651,7 +1657,8 @@ bool ApplePS2Controller::doEscape(UInt8 scancode)
       while (inb(kCommandPort) & kInputBusy)
           IODelay(kDataDelay);
       IODelay(kDataDelay);
-      outb(kCommandPort, kCP_EnableMouseClock);
+      if(!_kbdOnly)
+          outb(kCommandPort, kCP_EnableMouseClock);
 
       releaseModifiers = true;
     }
@@ -1868,11 +1875,11 @@ void ApplePS2Controller::setPowerStateGated( UInt32 powerState )
         
         if (_resetControllerFlag & RESET_CONTROLLER_ON_WAKEUP)
         {
-          resetController();
+          resetController(true);
         }
-            
+
 #endif // FULL_INIT_AFTER_WAKE
-            
+
 
         //
         // Transition from Sleep state to Working state in 4 stages.
@@ -1886,7 +1893,10 @@ void ApplePS2Controller::setPowerStateGated( UInt32 powerState )
         }
 
         DEBUG_LOG("%s: setCommandByte for wake 1\n", getName());
-        setCommandByte(0, kCB_DisableKeyboardClock | kCB_DisableMouseClock | kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ);
+        if (!_kbdOnly)
+            setCommandByte(0, kCB_DisableKeyboardClock | kCB_DisableMouseClock | kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ);
+        else
+            setCommandByte(0, kCB_DisableKeyboardClock | kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ);
 
         // 2. Unblock the request queue and wake up all driver threads
         //    that were blocked by submitRequest().
@@ -1911,7 +1921,10 @@ void ApplePS2Controller::setPowerStateGated( UInt32 powerState )
         // 4. Now safe to enable the IRQs...
             
         DEBUG_LOG("%s: setCommandByte for wake 2\n", getName());
-        setCommandByte(kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ | kCB_SystemFlag, 0);
+        if (!_kbdOnly)
+            setCommandByte(kCB_EnableKeyboardIRQ | kCB_EnableMouseIRQ | kCB_SystemFlag, 0);
+        else
+            setCommandByte(kCB_EnableKeyboardIRQ | kCB_SystemFlag, 0);
         --_ignoreInterrupts;
         break;
 
@@ -1937,7 +1950,7 @@ void ApplePS2Controller::dispatchDriverPowerControl( UInt32 whatToDo, size_t por
 {
     // Should be called with kPS2Aux or kPS2Kbd.
     // "port" set to kPS2Aux will run the power action for all mux ports
-    assert (port < kPS2MuxIdx);
+    assert (port < kPS2AuxMaxIdx);
   
     if (port == kPS2KbdIdx)
     {
@@ -1945,12 +1958,7 @@ void ApplePS2Controller::dispatchDriverPowerControl( UInt32 whatToDo, size_t por
         return;
     }
 
-    if (!_muxPresent) {
-        _devices[kPS2AuxIdx]->powerAction(whatToDo);
-        return;
-    }
-
-    for (size_t i = kPS2MuxIdx; i < kPS2MaxIdx; i++) {
+    for (size_t i = kPS2AuxIdx; i < _nubsCount; i++) {
         _devices[i]->powerAction(whatToDo);
     }
 }
@@ -2016,8 +2024,8 @@ void ApplePS2Controller::dispatchMessageGated(int* message, void* data)
                 break;
             default:
             
-                int dispatchMessage = kPS2M_notifyKeyTime;
-                dispatchMessageGated(&dispatchMessage, &(pInfo->time));
+                int dispatchMsg = kPS2M_notifyKeyTime;
+                dispatchMessageGated(&dispatchMsg, &(pInfo->time));
         }
     }
 }

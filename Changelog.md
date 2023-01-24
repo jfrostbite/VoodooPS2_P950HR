@@ -1,5 +1,32 @@
 VoodooPS2 Changelog
 ============================
+#### v2.3.3
+- Fixed rapidly opening pages in browsers while scrolling with the trackpoint
+- Fixed buttons on various trackpads (especially those without trackpoints attached)
+- Fixed DynamicEWMode problem on Lenovo ThinkPad Laptops (acidanthera/bugtracker#890)
+
+#### v2.3.2
+- Added `ps2kbdonly=1` argument not to disable touchpad line on reboot, thx @Kethen
+
+#### v2.3.1
+- Fixed disabled keyboard after reboot
+
+#### v2.3.0
+- Fixed variable shadowing
+
+#### v2.2.9
+- Improved stability of ALPS touchpads
+- V8 touchpads can pass all four fingers to VoodooInput natively
+- Fixed unpressing during 3 fingers gesture on ALPS V7
+- Use VoodooTrackpoint for trackstick and non-MT ALPS touchpads
+
+#### v2.2.8
+- Added ALPS touchpad support
+- Fixed ELAN trackpoint scrolling in the wrong direction
+
+#### v2.2.7
+- Fixed kernel panic after S3
+
 #### v2.2.6
 - Fixed some touchpads not waking after S3
 

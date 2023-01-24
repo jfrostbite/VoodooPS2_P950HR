@@ -193,19 +193,21 @@ enum {
 };
 
 // i8042 Mux indexes
-#define PS2_MUX_IDX     2
 #define PS2_MUX_PORTS   4
+
+#define PS2_STA_MUX_MASK  0x03
+#define PS2_STA_MUX_SHIFT 0x06
 
 // Normally, the i8042 controller has 2 ports. With the mux active,
 // there are 5 ports. 1 Keyboard port and 4 mux ports. All the muxed ports
-// share the same IRQ. When the controller is in the multiplexer mode, the
-// index for the aux port is skipped.
+// share the same IRQ. When the controller is in a multiplexed mode, 3
+// additional ports are added.
 
 enum {
     kPS2KbdIdx = 0,
     kPS2AuxIdx = 1,
-    kPS2MuxIdx = PS2_MUX_IDX,
-    kPS2MaxIdx = PS2_MUX_IDX + PS2_MUX_PORTS
+    kPS2AuxMaxIdx = 2,
+    kPS2MuxMaxIdx = PS2_MUX_PORTS + 1
 };
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -248,7 +250,7 @@ private:
   int                      _ignoreInterrupts {0};
   int                      _ignoreOutOfOrder {0};
     
-  ApplePS2Device *         _devices [kPS2MaxIdx] {nullptr};
+  ApplePS2Device *         _devices [kPS2MuxMaxIdx] {nullptr};
 
   IONotifier*              _publishNotify {nullptr};
   IONotifier*              _terminateNotify {nullptr};
@@ -273,6 +275,7 @@ private:
   int                      _wakedelay {10};
   bool                     _mouseWakeFirst {false};
   bool                     _muxPresent {false};
+  size_t                   _nubsCount {0};
   IOCommandGate*           _cmdGate {nullptr};
 #if WATCHDOG_TIMER
   IOTimerEventSource*      _watchdogTimer {nullptr};
@@ -281,6 +284,7 @@ private:
   const OSSymbol*          _deliverNotification {nullptr};
 
   int                      _resetControllerFlag {RESET_CONTROLLER_ON_BOOT | RESET_CONTROLLER_ON_WAKEUP};
+  bool                     _kbdOnly {0};
 
   virtual PS2InterruptResult _dispatchDriverInterrupt(size_t port, UInt8 data);
   virtual void dispatchDriverInterrupt(size_t port, UInt8 data);
@@ -301,8 +305,10 @@ private:
   virtual UInt8 readDataPort(size_t port);
   virtual void  writeCommandPort(UInt8 byte);
   virtual void  writeDataPort(UInt8 byte);
-  void resetController(void);
+  void resetController(bool);
   bool setMuxMode(bool);
+  void flushDataPort(void);
+  void resetDevices(void);
     
   static void interruptHandlerMouse(OSObject*, void* refCon, IOService*, int);
   static void interruptHandlerKeyboard(OSObject*, void* refCon, IOService*, int);

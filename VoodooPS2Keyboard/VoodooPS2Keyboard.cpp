@@ -1516,12 +1516,12 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
                 // Fn+F2 generates e0 ab and so does Fn+F3 (we will null those out in ps2 map)
                 static unsigned keys[] = { 0x2a, 0x1d };
                 // if Option key is down don't pull up on the Shift keys
-                int start = checkModifierState(kMaskLeftWindows) ? 1 : 0;
-                for (int i = start; i < countof(keys); i++)
+                int state = checkModifierState(kMaskLeftWindows) ? 1 : 0;
+                for (int i = state; i < countof(keys); i++)
                     if (KBV_IS_KEYDOWN(keys[i]))
                         dispatchKeyboardEventX(_PS2ToADBMap[keys[i]], false, now_abs);
                 dispatchKeyboardEventX(keyCode == 0x4e ? 0x90 : 0x91, goingDown, now_abs);
-                for (int i = start; i < countof(keys); i++)
+                for (int i = state; i < countof(keys); i++)
                     if (KBV_IS_KEYDOWN(keys[i]))
                         dispatchKeyboardEventX(_PS2ToADBMap[keys[i]], true, now_abs);
                 keyCode = 0;
@@ -1923,7 +1923,7 @@ void ApplePS2Keyboard::setKeyboardEnable(bool enable)
     // (keyboard enable/disable command)
     TPS2Request<2> request;
     request.commands[0].command = kPS2C_WriteDataPort;
-    request.commands[0].inOrOut = enable ? kDP_Enable : kDP_SetDefaultsAndDisable;
+    request.commands[0].inOrOut = enable ? kDP_Enable : kDP_SetDefaults;
     request.commands[1].command = kPS2C_ReadDataPortAndCompare;
     request.commands[1].inOrOut = kSC_Acknowledge;
     request.commandsCount = 2;

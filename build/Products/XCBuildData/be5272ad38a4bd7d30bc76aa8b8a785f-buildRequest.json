@@ -1,0 +1,65 @@
+{
+  "_buildCommand2" : {
+    "command" : "prepareForIndexing",
+    "enableIndexBuildArena" : false,
+    "targets" : null
+  },
+  "buildCommand" : "build",
+  "configuredTargets" : [
+    {
+      "guid" : "0a4539f8d026d84d1ac1a09e4baea878c0dabbdfbc5a6ca54f410aac301d4910"
+    },
+    {
+      "guid" : "0a4539f8d026d84d1ac1a09e4baea87876274ebb212f0bdbb84e33a1eebc2613"
+    },
+    {
+      "guid" : "0a4539f8d026d84d1ac1a09e4baea878f52ae33c4f47800a26612ecb135daa99"
+    },
+    {
+      "guid" : "0a4539f8d026d84d1ac1a09e4baea87843e429fe67784c185551a7d4f2097a6f"
+    }
+  ],
+  "containerPath" : "/Users/kevin/Documents/Repo/VoodooPS2_P950HR/VoodooPS2Controller.xcodeproj",
+  "continueBuildingAfterErrors" : true,
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "x86_64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "platform" : "macosx",
+      "sdk" : "macosx13.1",
+      "sdkVariant" : "macos",
+      "supportedArchitectures" : [
+        "x86_64h",
+        "x86_64"
+      ],
+      "targetArchitecture" : "x86_64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "",
+      "buildProductsPath" : "",
+      "derivedDataPath" : "/Users/kevin/Library/Developer/Xcode/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/kevin/Library/Developer/Xcode/DerivedData/VoodooPS2Controller-dwwwshuwjepdlkawjwqeafncqffh/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/kevin/Library/Developer/Xcode/DerivedData/VoodooPS2Controller-dwwwshuwjepdlkawjwqeafncqffh/Index.noindex/PrecompiledHeaders",
+      "pchPath" : ""
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "ENABLE_PREVIEWS" : "NO"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "schemeCommand2" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}
