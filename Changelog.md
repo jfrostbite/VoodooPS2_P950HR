@@ -1,5 +1,14 @@
 VoodooPS2 Changelog
 ============================
+#### v2.3.5
+- Removed actAsTrackpad and related logic
+- Fix Trackpoints connected to Elan Touchpads
+- Use VoodooInput Trackpoint logic for Elan Touchpads
+
+#### v2.3.4
+- Fixed device count detection when `ps2rst=0` is set
+- Fixed handleClose not being called by VoodooInput
+
 #### v2.3.3
 - Fixed rapidly opening pages in browsers while scrolling with the trackpoint
 - Fixed buttons on various trackpads (especially those without trackpoints attached)
