@@ -409,7 +409,7 @@ private:
     UInt32 lastTrackStickButtons, lastTouchpadButtons;
     uint64_t keytime {0};
     bool ignoreall {false};
-    int z_finger {45};
+    int z_finger {1};
     uint64_t maxaftertyping {100000000};
     int wakedelay {1000};
     // HID Notification

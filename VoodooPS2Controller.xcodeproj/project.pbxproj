@@ -766,7 +766,7 @@
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				"LLVM_LTO[arch=x86_64]" = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_VERSION = 2.3.4;
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
@@ -821,7 +821,7 @@
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				"LLVM_LTO[arch=x86_64]" = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_VERSION = 2.3.4;
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
 				PRODUCT_NAME = VoodooPS2Controller;
@@ -845,6 +845,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Controller;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Controller;
@@ -866,6 +867,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Controller;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Controller;
@@ -890,6 +892,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Keyboard;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Keyboard;
@@ -912,6 +915,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Keyboard;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Keyboard;
@@ -936,6 +940,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Mouse;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Mouse;
@@ -958,6 +963,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Mouse;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Mouse;
@@ -983,6 +989,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Trackpad;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Trackpad;
@@ -1006,6 +1013,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MODULE_NAME = as.acidanthera.driver.VoodooPS2Trackpad;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Trackpad;

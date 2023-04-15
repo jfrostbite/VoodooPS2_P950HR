@@ -283,7 +283,7 @@ private:
     int clampedFingerCount {0};
     int agmFingerCount {0};
 	bool wasSkipped {false};
-	int z_finger {30};
+	int z_finger {1};
     int zlimit {0};
     int noled {0};
     uint64_t maxaftertyping {500000000};
