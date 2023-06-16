@@ -1,8 +1,0 @@
-Target dependency graph (4 targets)
-VoodooPS2Keyboard in VoodooPS2Controller, no dependencies
-VoodooPS2Mouse in VoodooPS2Controller, no dependencies
-VoodooPS2Trackpad in VoodooPS2Controller, no dependencies
-VoodooPS2Controller in VoodooPS2Controller, depends on:
-VoodooPS2Keyboard in VoodooPS2Controller (explicit)
-VoodooPS2Mouse in VoodooPS2Controller (explicit)
-VoodooPS2Trackpad in VoodooPS2Controller (explicit)
